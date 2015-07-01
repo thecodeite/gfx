@@ -1,0 +1,23 @@
+{
+  "name": "gfx",
+  "version": "0.0.0",
+  "authors": [
+    "Sam Plews <the@codeite.com>"
+  ],
+  "moduleType": [
+    "globals"
+  ],
+  "license": "MIT",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "bower": "*",
+    "es6-shim": "~0.32.3",
+    "install": "~1.0.4"
+  }
+}
