@@ -14,12 +14,14 @@ define(function (require) {
   var limbs = [];
   var nextAction = 'add';
   var limbless = [];
-  var width = 64;
-  var height = 64;
-  var interval = 150;
-  var scaleF = 5;
+  var width = 128;
+  var height = 128;
+  var interval = 100;
+  var scaleF = 3;
   var center = new P(width/2, height/2);
   var lollyCount = 0;
+  var maxLimbLength = 64;
+  var deiredLollyCount = 40;
 
   // var randomGen = new NiceSpacialRandom(width, height, {
   //   minDistance: 7,
@@ -31,7 +33,7 @@ define(function (require) {
      minDistance: 7,
      rowSafe: true,
      columnSafe: true,
-     margin: 1
+     margin: 2
   });
 
   //randomGen.addBox(new Box(new P(0, 0), new P(20,20)));
@@ -43,7 +45,7 @@ define(function (require) {
  
 
 
-  var ap = randomGen.next();
+  //var ap = randomGen.next();
   //var bp = niceSpacialRandom.next().add(1).multi(25);
 
   //var a = new Lolly(ap);
@@ -69,24 +71,34 @@ define(function (require) {
     if(limb.start.x === limb.end.x) {
       // Verticale line
 
-      var box = new Box(
-        new P(limb.start.x-32, limb.start.y),
-        new P(limb.end.x+32, limb.end.y)
-      );
+      var inBox = new Box(
+        new P(limb.start.x-maxLimbLength, limb.start.y),
+        new P(limb.end.x+maxLimbLength, limb.end.y)
+      ).normal();
 
-      box = box.normal();
-      randomGen.addBox(box);
+      var outBox = new Box(
+        new P(limb.start.x-4, limb.start.y),
+        new P(limb.end.x+4, limb.end.y)
+      ).normal();
+
+      randomGen.addBox(inBox);
+      randomGen.addExcludeBox(outBox);
 
     } else {
       // Hoz line
 
-      var box = new Box(
-        new P(limb.start.x, limb.start.y-32),
-        new P(limb.end.x, limb.end.y+32)
-      );
+      var inBox = new Box(
+        new P(limb.start.x, limb.start.y-maxLimbLength),
+        new P(limb.end.x, limb.end.y+maxLimbLength)
+      ).normal();
 
-      box = box.normal();
-      randomGen.addBox(box);
+      var outBox = new Box(
+        new P(limb.start.x, limb.start.y-4),
+        new P(limb.end.x, limb.end.y+4)
+      ).normal();
+
+      randomGen.addBox(inBox);
+      randomGen.addExcludeBox(outBox);
     }
   }
 
@@ -130,7 +142,7 @@ define(function (require) {
           }
         });
 
-        if(lolly.limbSize > 32) {
+        if(lolly.limbSize > maxLimbLength) {
           //var limb = rand(lolly.limbs);
           var limb = lolly.limbs.reduce(function(p, c, i) {
             
@@ -187,7 +199,7 @@ define(function (require) {
         }
 
     if(limbless.length === 0) {
-      if(lollyCount < 25){
+      if(lollyCount < deiredLollyCount){
         nextAction = 'add';
       } else {
         console.log("Done");
@@ -252,12 +264,12 @@ define(function (require) {
     });
   }
 
-  function Limb(root, scale, direction) {
+  function Limb(lolly, scale, direction) {
     var that = this;
     this.scale = scale;
     this.direction = direction;
 
-    this.start = root.add(direction);
+    this.start = lolly.p.add(direction.multi(lolly.radius));
     this.end = this.start.add(direction.multi(scale));
 
     this.grow = function() {
@@ -271,16 +283,16 @@ define(function (require) {
     var obj = {
       p: p,
       limbSize: 0,
-      limbs: [
-        new Limb(p, 0, new P(0, 1)),
-        new Limb(p, 0, new P(0, -1)),
-        new Limb(p, 0, new P(1, 0)),
-        new Limb(p, 0, new P(-1, 0)),
-      ],
-      radius: 1,
+      limbs: [],
+      radius: 2,
 
       render: render
     }
+
+    obj.limbs.push(new Limb(obj, 0, new P(0, 1)));
+    obj.limbs.push(new Limb(obj, 0, new P(0, -1)));
+    obj.limbs.push(new Limb(obj, 0, new P(1, 0)));
+    obj.limbs.push(new Limb(obj, 0, new P(-1, 0)));
     return obj;
 
     function render(ctx, sf, tr) {
@@ -304,6 +316,8 @@ define(function (require) {
         var end = limb.end.multi(sf).add(tr);
 
         // console.log(c, limb.direction, end);
+
+        ctx.lineWidth = 0.4 * sf;
 
         ctx.beginPath();
         ctx.moveTo(start.x, start.y);

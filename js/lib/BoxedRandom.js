@@ -12,7 +12,7 @@ define(["Box", "P", "rand", "sequence"],
 
     this.next = function(){
       var gen = null;
-      var tries = 100;
+      var tries = 1000;
       while(!full && !gen) {
         gen = lookForSpace();
         if(tries-- < 0) {
@@ -22,6 +22,10 @@ define(["Box", "P", "rand", "sequence"],
 
       return gen;
     }
+
+    this.addExcludeBox = function addExcludeBox (box) {
+
+    };
 
     this.addBox = function addBox (box) {
       box = box.normal().clipTo(grid);
@@ -122,12 +126,10 @@ define(["Box", "P", "rand", "sequence"],
           var res;
           tot += b.area;
 
-          
-
           if(tot > ran)
             res = true;
 
-          console.log('tot, b, ran, res', tot, b, ran, res);
+          //console.log('tot, b, ran, res', tot, b, ran, res);
           return res;
         });
 
@@ -233,21 +235,38 @@ define(["Box", "P", "rand", "sequence"],
       ctx.lineWidth = 0.5;
       ctx.fillStyle = nextColor();
 
-      var tl = grid.tl.multi(scale).add(translate.x);
-      var br = grid.br.multi(scale).add(translate.x);
+      var tl = grid.tl.multi(scale).add(translate);
+      var br = grid.br.multi(scale).add(translate);
 
       ctx.strokeRect(tl.x+0.5, tl.y+0.5, (br.x-tl.x)-0.5, (br.y-tl.y)-0.5);
 
-      boxes.forEach(function(box) {
+      boxes.forEach(function (box) {
         ctx.fillStyle = nextColor();
         tl = box.tl.multi(scale).add(translate);
         br = box.br.multi(scale).add(translate);
         //console.log('r', tl, br);
         ctx.fillRect(tl.x+0.5, tl.y+0.5, (br.x-tl.x)-0.5, (br.y-tl.y)-0.5);
 
-        ctx.strokeColor = '#000000';
-        canvas_arrow(ctx, tl.x+0.5, tl.y+0.5, br.x-0.5, br.y-0.5);
-      }); 
+        //ctx.strokeColor = '#000000';
+        //canvas_arrow(ctx, tl.x+0.5, tl.y+0.5, br.x-0.5, br.y-0.5);
+      });
+
+      created.forEach(function (p) {
+        ctx.fillStyle = "#99FF99";
+        
+        if(options.columnSafe) {
+          tl = new P(p.x-options.margin, 0).multi(scale).add(translate);
+          br = new P(p.x+options.margin, height).multi(scale).add(translate);
+          ctx.fillRect(tl.x, tl.y, (br.x-tl.x), (br.y-tl.y));
+        }
+
+        if(options.rowSafe) {
+          tl = new P(0, p.y-options.margin).multi(scale).add(translate);
+          br = new P(width, p.y+options.margin).multi(scale).add(translate);
+          ctx.fillRect(tl.x, tl.y, (br.x-tl.x), (br.y-tl.y));
+        }
+      });
+
     }
   }
 });
