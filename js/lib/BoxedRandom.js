@@ -1,7 +1,7 @@
 define(["Box", "P", "rand", "sequence"], 
   function (Box, P, rand, sequence) {
   return function BoxedRandom(width, height, options) {
-    console.log('options', options);
+
     var created = [];
     var grid = new Box(new P(0, 0), new P(width, height));
     var boxes = [];
@@ -15,6 +15,11 @@ define(["Box", "P", "rand", "sequence"],
       var tries = 1000;
       while(!full && !gen) {
         gen = lookForSpace();
+
+        if(gen === "empty"){
+          return null;
+        }
+
         if(tries-- < 0) {
           throw "Ran out of tries";
         }
@@ -23,15 +28,47 @@ define(["Box", "P", "rand", "sequence"],
       return gen;
     }
 
-    this.addExcludeBox = function addExcludeBox (box) {
+    function addSpaces(box) {
+      console.log('addSpaces start', box.tl, box.br);
+      box.spaces = new Array(box.area);
+      var slot = 0;
+      for(var x = box.tl.x; x<box.br.x; x++) {
+        for(var y = box.tl.y; y<box.br.y; y++) {
+          box.spaces[slot++] = {x: x, y: y};
+        }
+      }
+      console.log('addSpaces done');
+    }
 
+    this.addExcludeBox = function addExcludeBox (box) {
+      var overlaps = boxes.filter(function (b) {
+        return box.overlap(b);
+      });
+
+      for(var x = box.tl.x; x<box.br.x; x++) {
+        for(var y = box.tl.y; y<box.br.y; y++) {
+          overlaps.find(function (b) {
+
+            var xy = b.spaces.find(function (n) {
+              return n.x === x && n.y === y;
+            });
+
+            if(xy) {
+              b.spaces.splice(b.spaces.indexOf(xy), 1);
+              return true;
+            }
+
+          })
+        }
+      }
     };
 
     this.addBox = function addBox (box) {
       box = box.normal().clipTo(grid);
-
+      
 
       if(boxes.length === 0) {
+        addSpaces(box);
         boxes.push(box);
         return;
       }
@@ -50,6 +87,7 @@ define(["Box", "P", "rand", "sequence"],
           addBox.call(this, b);
         });
       } else {
+        addSpaces(box);
         boxes.push(box);
         var that = this;
         
@@ -75,10 +113,13 @@ define(["Box", "P", "rand", "sequence"],
               boxes.splice(boxes.indexOf(box), 1);
               boxes.splice(boxes.indexOf(other), 1);
               //console.log('x=x removing', box, other);
-              boxes.push(new Box(
+              var newBox = new Box(
                 new P(box.tl.x, other.tl.y),
                 new P(box.br.x, box.br.y )
-              ));
+              );
+              boxes.push(newBox);
+              newBox.spaces = box.spaces.concat(other.spaces);
+
               return true;
             }
           } else if(box.tl.y === other.tl.y && box.br.y === other.br.y) {
@@ -86,10 +127,13 @@ define(["Box", "P", "rand", "sequence"],
               boxes.splice(boxes.indexOf(box), 1);
               boxes.splice(boxes.indexOf(other), 1);
               //console.log('y=y removing', box, other);
-              boxes.push(new Box(
+              var newBox = new Box(
                 new P(other.tl.x, other.tl.y),
                 new P(box.br.x, box.br.y )
-              ));
+              );
+              boxes.push(newBox);
+              newBox.spaces = box.spaces.concat(other.spaces);
+
               return true;
             }
           }
@@ -111,7 +155,15 @@ define(["Box", "P", "rand", "sequence"],
         return p;
       } else {
         //var box = rand(boxes);
-        var ob = boxes.map(function (b) {
+        var boxesWithSpace = boxes.filter(function (b) {
+          return b.spaces.length > 0
+        });
+
+        if(boxesWithSpace.length === 0) {
+          return "empty";
+        }
+
+        var ob = boxesWithSpace.map(function (b) {
           return {area: b.area, box: b};
         });
 
@@ -135,10 +187,16 @@ define(["Box", "P", "rand", "sequence"],
 
         var box = boxCont.box;
         
+        var xy = rand(box.spaces, true);
+
+        //console.log('xy', xy);
+        var p = new P(xy.x, xy.y);
+        /*
         var p = new P (
               rand(box.tl.x, box.br.x),
               rand(box.tl.y, box.br.y)
             );
+        */
 
         if(pointOk(p)) {
           created.push(p);
@@ -158,6 +216,7 @@ define(["Box", "P", "rand", "sequence"],
         // console.log('t', minDist, a, p, dx, dy, 'dist', dist);
         return tooClose;
       });
+
 
       if(!existing && options.rowSafe) {
         existing |= created.some(function(a){
@@ -247,11 +306,16 @@ define(["Box", "P", "rand", "sequence"],
         //console.log('r', tl, br);
         ctx.fillRect(tl.x+0.5, tl.y+0.5, (br.x-tl.x)-0.5, (br.y-tl.y)-0.5);
 
+        ctx.fillStyle = 'black';
+        box.spaces.forEach(function(sp) {
+          ctx.fillRect((sp.x*scale)+translate.x,(sp.y*scale)+translate.y,0.5,0.5);
+        });
         //ctx.strokeColor = '#000000';
         //canvas_arrow(ctx, tl.x+0.5, tl.y+0.5, br.x-0.5, br.y-0.5);
       });
 
-      created.forEach(function (p) {
+
+      if(false) created.forEach(function (p) {
         ctx.fillStyle = "#99FF99";
         
         if(options.columnSafe) {

@@ -21,7 +21,7 @@ define(function (require) {
   var center = new P(width/2, height/2);
   var lollyCount = 0;
   var maxLimbLength = 64;
-  var deiredLollyCount = 40;
+  var deiredLollyCount = 400;
 
   // var randomGen = new NiceSpacialRandom(width, height, {
   //   minDistance: 7,
@@ -107,31 +107,29 @@ define(function (require) {
   function addt () {
     
     if(nextAction === 'add') {
-      try {
-        var p = randomGen.next();
-        if(p) {
-          console.log('add', p);
-          var lolly = new Lolly(p)
-          lollies.push(lolly);
-          limbless.push(lolly);
-          lollyCount++;
-          paint(context);
-        } else {
-          console.error('randomGen didnt get');
-          paint(context);
-        }
-        if(!stopped){
-           timeout = setTimeout(addt, interval);
-        }
-      } catch(e){
-        console.error(e);
+   
+      var p = randomGen.next();
+      if(p) {
+        console.log('add', p, typeof(p));
+        var lolly = new Lolly(p)
+        lollies.push(lolly);
+        limbless.push(lolly);
+        lollyCount++;
+        paint(context);
+      } else {
+        console.error('randomGen didnt get');
+        stopped = true;
+        paint(context);
       }
-
+      if(!stopped){
+         timeout = setTimeout(addt, interval);
+      }
       nextAction = 'growLimbs';
 
     } else if(nextAction === 'growLimbs') {
       var bigBox = new Box(new P(0,0), new P(width, height));
 
+      while(limbless.length > 0) {
       limbless.forEach(function (lolly) {
         lolly.limbSize++;
         lolly.limbs.forEach(function(limb){
@@ -193,9 +191,10 @@ define(function (require) {
 
       paint(context);
     }
+    }
 
     if(!stopped){
-           timeout = setTimeout(addt, interval);
+           timeout = setTimeout(addt, interval/2);
         }
 
     if(limbless.length === 0) {
@@ -258,7 +257,7 @@ define(function (require) {
     var translate =  new P(scaleF, scaleF)
     canvas.width = canvas.width;
 
-    //randomGen.render(ctx, scaleFactor, translate);
+    randomGen.render(ctx, scaleFactor, translate);
     lollies.forEach(function(lolly){
       lolly.render(ctx, scaleFactor, translate);
     });
