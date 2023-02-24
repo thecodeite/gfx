@@ -25,5 +25,9 @@ define(function () {
     this.distTo = function(other) {
       return Math.sqrt(this.distToSq);
     };
+
+    this.swap = function() {
+      return new P(this.y, this.x);
+    };
   }
 })

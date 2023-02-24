@@ -1,13 +1,24 @@
 define(["P"], function(P){
-  return function Box(tl, br) {
-    this.tl = tl;
-    this.br = br;
+  return function Box(a, b, c, d) {
+
+    if(a instanceof P && b instanceof P) {
+      this.tl = a;
+      this.br = b;
+    } else {
+      this.tl = new P(a, b);
+      this.br = new P(c, d);
+    }
 
     this.__defineGetter__("area", function() { 
       var dx = Math.abs(this.tl.x - this.br.x);
       var dy = Math.abs(this.tl.y - this.br.y);
       return dx * dy; 
     });
+
+    this.toString = function(){
+      return 'tl: '+this.tl.x+', '+this.tl.y+
+        ' br: '+this.br.x+', '+this.br.y;
+    };
 
     this.clone = function () {
       return new Box(
@@ -16,13 +27,18 @@ define(["P"], function(P){
       );
     }
 
-
+    this.contract = function(f) {
+      return new Box(
+        new P(this.tl.x+f, this.tl.y+f),
+        new P(this.br.x-f, this.br.y-f)
+      );
+    }
 
     this.contains = function (p) {
-      return p.x >= tl.x 
-        && p.x <= br.x
-        && p.y >= tl.y 
-        && p.y <= br.y;
+      return p.x >= this.tl.x 
+        && p.x <= this.br.x
+        && p.y >= this.tl.y 
+        && p.y <= this.br.y;
     }
 
     this.normal = function () {
